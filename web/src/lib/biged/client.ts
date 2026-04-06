@@ -31,12 +31,7 @@ export class BigEdClient {
   private readonly baseUrl: string;
 
   constructor(baseUrl?: string) {
-    const url = baseUrl ?? process.env.BIGED_URL;
-    if (!url) {
-      throw new BigEdConnectionError(
-        'BIGED_URL environment variable is not set and no baseUrl was provided',
-      );
-    }
+    const url = baseUrl ?? process.env.BIGED_URL ?? 'http://localhost:5555';
     // Strip trailing slash for consistent URL building
     this.baseUrl = url.replace(/\/+$/, '');
   }
@@ -97,7 +92,10 @@ export class BigEdClient {
 
   /** Dispatch a new task to the fleet. */
   async postTask(request: SkillRequest): Promise<Task> {
-    return this.request<Task>('POST', '/api/tasks', request);
+    return this.request<Task>('POST', '/api/tasks', {
+      skill: request.skill,
+      payload: request.payload,
+    });
   }
 
   /** Get the current status of a task by ID. */
@@ -115,12 +113,15 @@ export class BigEdClient {
     return this.request<HwState>('GET', '/api/hw');
   }
 
-  /** Run an AI inference request through the fleet's Ollama router. */
-  async inference(request: InferenceRequest): Promise<InferenceResponse> {
-    return this.request<InferenceResponse>(
-      'POST',
+  /**
+   * @deprecated biged-rs does not expose /api/inference.
+   * Use `ollamaGenerate()` from `@/lib/ollama/client` instead.
+   */
+  async inference(_request: InferenceRequest): Promise<InferenceResponse> {
+    throw new BigEdError(
+      'inference() is deprecated — use ollamaGenerate() from @/lib/ollama/client',
+      501,
       '/api/inference',
-      request,
     );
   }
 

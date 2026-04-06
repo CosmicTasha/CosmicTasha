@@ -1,83 +1,80 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { getBigEdClient } from './index';
-import type { FleetStatus, InferenceRequest, InferenceResponse } from './types';
+import type { FleetStatus } from './types';
 
 // ── useBigEdStatus ──────────────────────────────────────────────────
+// Polls the Next.js proxy at /api/biged/status (which calls biged-rs
+// server-side) so we don't need CORS or exposing BIGED_URL to the browser.
 
 const STATUS_POLL_INTERVAL_MS = 30_000;
 
-export function useBigEdStatus() {
-  const [status, setStatus] = useState<FleetStatus | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetch = useCallback(async () => {
-    try {
-      const client = getBigEdClient();
-      const data = await client.getStatus();
-      setStatus(data);
-      setIsConnected(true);
-      setError(null);
-    } catch (err: unknown) {
-      setIsConnected(false);
-      setError(err instanceof Error ? err : new Error(String(err)));
-    }
-  }, []);
-
-  useEffect(() => {
-    // Initial fetch
-    fetch();
-    const id = setInterval(fetch, STATUS_POLL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [fetch]);
-
-  return { status, isConnected, error } as const;
+interface BigEdStatusResult {
+  connected: boolean;
+  status: FleetStatus | null;
 }
 
-// ── useBigEdInference ───────────────────────────────────────────────
-
-export function useBigEdInference(request: InferenceRequest | null) {
-  const [result, setResult] = useState<InferenceResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export function useBigEdStatus() {
+  const [data, setData] = useState<BigEdStatusResult>({
+    connected: false,
+    status: null,
+  });
   const [error, setError] = useState<Error | null>(null);
 
-  // Stable reference to avoid re-triggering on object identity changes
-  const requestJson = request ? JSON.stringify(request) : null;
-  const lastRequestRef = useRef<string | null>(null);
-
   useEffect(() => {
-    if (!requestJson || requestJson === lastRequestRef.current) return;
-    lastRequestRef.current = requestJson;
-
-    const parsed = JSON.parse(requestJson) as InferenceRequest;
     let cancelled = false;
 
-    setIsLoading(true);
-    setError(null);
+    async function poll() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5_000);
+        const res = await fetch('/api/biged/status', {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        const json = await res.json();
 
-    const client = getBigEdClient();
-    client
-      .inference(parsed)
-      .then((res) => {
         if (!cancelled) {
-          setResult(res);
-          setIsLoading(false);
+          if (json.connected) {
+            setData({
+              connected: true,
+              status: {
+                agents: json.agents ?? [],
+                tasks: json.tasks ?? {
+                  PENDING: 0,
+                  RUNNING: 0,
+                  DONE: 0,
+                  FAILED: 0,
+                  CANCELLED: 0,
+                  WAITING: 0,
+                },
+              },
+            });
+            setError(null);
+          } else {
+            setData({ connected: false, status: null });
+          }
         }
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if (!cancelled) {
+          setData({ connected: false, status: null });
           setError(err instanceof Error ? err : new Error(String(err)));
-          setIsLoading(false);
         }
-      });
+      }
+    }
 
+    poll();
+    const id = setInterval(poll, STATUS_POLL_INTERVAL_MS);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
-  }, [requestJson]);
+  }, []);
 
-  return { result, isLoading, error } as const;
+  return {
+    status: data.status,
+    isConnected: data.connected,
+    error,
+  } as const;
 }

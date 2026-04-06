@@ -4,17 +4,16 @@ export interface Task {
   skill: string;
   payload: Record<string, unknown>;
   status:
-    | 'pending'
-    | 'running'
-    | 'done'
-    | 'failed'
-    | 'waiting_human'
-    | 'review'
-    | 'forwarded';
+    | 'PENDING'
+    | 'RUNNING'
+    | 'DONE'
+    | 'FAILED'
+    | 'CANCELLED'
+    | 'WAITING';
   result?: Record<string, unknown>;
   agent?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Skill execution request
@@ -24,7 +23,10 @@ export interface SkillRequest {
   priority?: 'low' | 'normal' | 'high';
 }
 
-// AI inference
+/**
+ * @deprecated Use `ollamaGenerate()` from `@/lib/ollama/client` instead.
+ * biged-rs does not expose an /api/inference endpoint.
+ */
 export interface InferenceRequest {
   prompt: string;
   model?: string;
@@ -34,6 +36,9 @@ export interface InferenceRequest {
   response_format?: 'text' | 'json';
 }
 
+/**
+ * @deprecated Use `OllamaGenerateResponse` from `@/lib/ollama/client` instead.
+ */
 export interface InferenceResponse {
   text: string;
   model: string;
@@ -41,18 +46,23 @@ export interface InferenceResponse {
   duration_ms: number;
 }
 
-// Fleet status
+// Fleet status — matches biged-rs GET /api/status response
 export interface FleetStatus {
   agents: Agent[];
-  queue_depth: number;
-  active_tasks: number;
-  uptime_seconds: number;
+  tasks: {
+    PENDING: number;
+    RUNNING: number;
+    DONE: number;
+    FAILED: number;
+    CANCELLED: number;
+    WAITING: number;
+  };
 }
 
 export interface Agent {
   name: string;
   role: string;
-  status: 'idle' | 'busy' | 'quarantined' | 'offline';
+  status: 'IDLE' | 'BUSY' | 'DISABLED';
   current_task?: string;
 }
 

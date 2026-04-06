@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { BigEdClient } from '@/lib/biged/client';
+import { ollamaGenerate } from '@/lib/ollama/client';
 
 // ---------------------------------------------------------------------------
 // Mock preview generator (template-based SOC 2 language)
@@ -49,30 +49,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- Try biged-rs inference first ---
+    // --- Try Ollama inference first ---
     try {
-      const client = new BigEdClient();
-      const prompt =
-        `Rewrite the following company description as a SOC 2 Type II System Description. ` +
-        `Use formal compliance language. Keep it to 2-3 sentences. ` +
-        `Company: ${companyName || 'Unknown'}. Description: ${description}`;
-
-      const result = await client.inference({
-        prompt,
-        max_tokens: 300,
+      const result = await ollamaGenerate({
+        prompt: `Rewrite the following company description as a SOC 2 Type II System Description. Use formal compliance language. Keep it to 2-3 sentences. Company: ${companyName || 'Unknown'}. Description: ${description}`,
+        system: 'You are a SOC 2 compliance writer. Produce concise, formal system descriptions suitable for a SOC 2 Type II report. Output only the system description text, no preamble.',
         temperature: 0.4,
-        system_prompt:
-          'You are a SOC 2 compliance writer. Produce concise, formal system descriptions suitable for a SOC 2 Type II report.',
+        max_tokens: 300,
       });
 
       return NextResponse.json({
-        preview: result.text,
+        preview: result.response,
         source: 'ai' as const,
       });
     } catch (error: unknown) {
-      // If biged-rs is unreachable or errors, fall through to mock
+      // If Ollama is unreachable or errors, fall through to mock
       const message = error instanceof Error ? error.message : String(error);
-      console.warn(`[ai-preview] biged-rs unavailable, falling back to mock: ${message}`);
+      console.warn(`[ai-preview] Ollama unavailable, falling back to mock: ${message}`);
     }
 
     // --- Fallback: mock generator ---

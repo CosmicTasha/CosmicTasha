@@ -4,6 +4,7 @@ import type {
   GeneratedDocument,
   GeneratedSection,
 } from './types';
+import { ollamaGenerate } from '@/lib/ollama/client';
 
 // ---------------------------------------------------------------------------
 // Answer interpolation — replaces {{key}} and {{key.subkey}} with values
@@ -542,20 +543,26 @@ ${frameworks !== 'Not specified' ? `In addition to SOC 2, ${companyName} is targ
 }
 
 // ---------------------------------------------------------------------------
-// AI prose generation
+// AI prose generation — calls Ollama directly when useAI is enabled
 // ---------------------------------------------------------------------------
-// NOTE: The generator runs server-side in an API route, so we can't use
-// relative fetch to /api/intake/ai-preview. For now we always use the mock
-// prose generator, which produces realistic compliance language from answers.
-// When biged-rs integration is wired up, this will call the inference API
-// directly instead of going through the Next.js API route.
 
 async function tryAiGenerate(
-  _prompt: string,
-  _companyName: string,
+  prompt: string,
+  companyName: string,
 ): Promise<string | null> {
-  // TODO: Wire up direct biged-rs inference call here
-  return null;
+  try {
+    const result = await ollamaGenerate({
+      prompt,
+      system: `You are a SOC 2 compliance writer generating formal policy and procedure documentation for ${companyName}. Produce clear, professional prose suitable for a SOC 2 Type II report. Output only the document section text, no preamble or commentary.`,
+      temperature: 0.4,
+      max_tokens: 800,
+    });
+    return result.response;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[doc-gen] Ollama inference failed, falling back to mock: ${message}`);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -566,6 +573,7 @@ export async function generateDocument(
   template: DocTemplate,
   answers: Record<string, unknown>,
   companyProfile: { name: string; size: string; description: string },
+  useAI: boolean = false,
 ): Promise<GeneratedDocument> {
   const docId = `doc_${template.id}_${Date.now()}`;
   const sections: GeneratedSection[] = [];
@@ -581,9 +589,11 @@ export async function generateDocument(
     let content: string;
 
     if (section.type === 'ai_generate') {
-      // Try AI generation first, fall back to mock
+      // Try AI generation when enabled, fall back to mock
       const interpolatedPrompt = interpolate(section.content || '', answers);
-      const aiResult = await tryAiGenerate(interpolatedPrompt, companyProfile.name);
+      const aiResult = useAI
+        ? await tryAiGenerate(interpolatedPrompt, companyProfile.name)
+        : null;
 
       if (aiResult) {
         content = `# ${section.title}\n\n${aiResult}`;

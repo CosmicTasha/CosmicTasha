@@ -2,7 +2,7 @@ import { BigEdClient } from './client';
 
 export { BigEdClient, BigEdConnectionError, BigEdError } from './client';
 export { BigEdEventSource } from './events';
-export { useBigEdInference, useBigEdStatus } from './hooks';
+export { useBigEdStatus } from './hooks';
 export type {
   Agent,
   FleetEvent,
