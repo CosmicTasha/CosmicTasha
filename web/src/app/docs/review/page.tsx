@@ -12,6 +12,8 @@ import {
 
 import { useReview } from "./_context/review-context";
 import type { ReviewSection } from "@/lib/review/types";
+import { exportToPdf } from "@/lib/export/pdf";
+import { exportToDocx } from "@/lib/export/docx";
 
 /* ------------------------------------------------------------------ */
 /*  Status badge                                                       */
@@ -307,6 +309,26 @@ function SectionCard({
 /* ------------------------------------------------------------------ */
 
 function CompleteBanner({ docId }: { docId: string }) {
+  const { currentDoc } = useReview();
+
+  const handleExportPdf = useCallback(() => {
+    if (!currentDoc) return;
+    const sections = currentDoc.sections.map((s) => ({
+      title: s.title,
+      content: s.content,
+    }));
+    exportToPdf(currentDoc.name, sections);
+  }, [currentDoc]);
+
+  const handleExportDocx = useCallback(async () => {
+    if (!currentDoc) return;
+    const sections = currentDoc.sections.map((s) => ({
+      title: s.title,
+      content: s.content,
+    }));
+    await exportToDocx(currentDoc.name, "Your Company", sections);
+  }, [currentDoc]);
+
   return (
     <div className="rounded-lg border border-ct-status-strength/20 bg-ct-status-strength/[0.06] px-6 py-5">
       <div className="flex items-center gap-3">
@@ -327,26 +349,18 @@ function CompleteBanner({ docId }: { docId: string }) {
           Approve &amp; Finalize Document
         </button>
         <button
-          disabled
-          className="flex items-center gap-1.5 rounded-md border border-white/[0.06] px-4 py-2 text-xs text-ct-text-tertiary cursor-not-allowed"
-          title="Coming Soon"
+          onClick={handleExportPdf}
+          className="flex items-center gap-1.5 rounded-md border border-white/[0.06] px-4 py-2 text-xs text-ct-text-secondary transition-colors hover:border-ct-accent/30 hover:text-ct-accent"
         >
           <FileDown className="h-3.5 w-3.5" />
           Export as PDF
-          <span className="ml-1 rounded bg-white/[0.06] px-1 py-0.5 text-[9px]">
-            Soon
-          </span>
         </button>
         <button
-          disabled
-          className="flex items-center gap-1.5 rounded-md border border-white/[0.06] px-4 py-2 text-xs text-ct-text-tertiary cursor-not-allowed"
-          title="Coming Soon"
+          onClick={handleExportDocx}
+          className="flex items-center gap-1.5 rounded-md border border-white/[0.06] px-4 py-2 text-xs text-ct-text-secondary transition-colors hover:border-ct-accent/30 hover:text-ct-accent"
         >
           <FileDown className="h-3.5 w-3.5" />
           Export as DOCX
-          <span className="ml-1 rounded bg-white/[0.06] px-1 py-0.5 text-[9px]">
-            Soon
-          </span>
         </button>
       </div>
     </div>

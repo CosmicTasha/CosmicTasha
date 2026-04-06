@@ -170,3 +170,10 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  nav, aside, button, .no-print, [class*="sidebar"] { display: none !important; }
+  body { background: white !important; color: black !important; }
+  main { max-width: 100% !important; margin: 0 !important; }
+  @page { margin: 2cm; size: letter; }
+}

@@ -35,6 +35,7 @@ import {
   type GeneratedGap,
 } from "@/lib/gap-generator";
 import { getCurrentTier, isPaidTier } from "@/lib/tier";
+import { exportToPdf } from "@/lib/export/pdf";
 
 // ---------------------------------------------------------------------------
 // Tier display config
@@ -1072,25 +1073,89 @@ export default function ResultsPage() {
                     </Tooltip>
                   </TooltipProvider>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <button
-                          disabled
-                          className="inline-flex items-center gap-1.5 text-sm text-ct-text-secondary opacity-60 cursor-not-allowed transition-colors"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          Export Compliance Profile as PDF
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="border border-white/[0.06] bg-ct-surface-raised text-ct-text-primary"
-                      >
-                        <p className="text-xs">Coming Soon</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <button
+                    onClick={() => {
+                      const sections: { title: string; content: string }[] = [];
+
+                      // Score overview
+                      sections.push({
+                        title: "Readiness Score Overview",
+                        content: [
+                          `**Overall Score:** ${readinessScore !== null ? Math.round(readinessScore) : "--"}/100`,
+                          readinessResult ? `**Tier:** ${tierConfig.label}` : "",
+                          readinessResult ? `\n${readinessResult.message}` : "",
+                          `\n**Company:** ${companyName}`,
+                        ]
+                          .filter(Boolean)
+                          .join("\n"),
+                      });
+
+                      // Dimension breakdown
+                      if (readinessResult?.dimensions) {
+                        const dimLines = readinessResult.dimensions.map(
+                          (d) =>
+                            `- **${d.label}:** ${d.score}/100 (${Math.round(d.weight * 100)}% weight)${d.signals.length > 0 ? " -- " + d.signals.join(", ") : ""}`,
+                        );
+                        sections.push({
+                          title: "Dimension Breakdown",
+                          content: dimLines.join("\n"),
+                        });
+                      }
+
+                      // Gap analysis
+                      if (gaps.length > 0) {
+                        const severityLabels: Record<string, string> = {
+                          P0: "Critical",
+                          P1: "High",
+                          P2: "Medium",
+                          P3: "Low",
+                        };
+                        const gapTable = [
+                          "| Gap | Severity | Dimension |",
+                          "| --- | --- | --- |",
+                          ...gaps.map(
+                            (g) =>
+                              `| ${g.title} | ${g.severity} - ${severityLabels[g.severity] ?? g.severity} | ${g.dimensionLabel} |`,
+                          ),
+                        ];
+                        sections.push({
+                          title: "Identified Gaps",
+                          content: gapTable.join("\n"),
+                        });
+                      }
+
+                      // Timeline
+                      const timelineLines: string[] = [];
+                      if (gapsBySeverity.P0.length > 0) {
+                        timelineLines.push("## Week 1-2: Critical Foundations");
+                        gapsBySeverity.P0.forEach((g) => timelineLines.push(`- ${g.title}`));
+                      }
+                      if (gapsBySeverity.P1.length > 0) {
+                        timelineLines.push("## Week 3-4: Core Controls");
+                        gapsBySeverity.P1.forEach((g) => timelineLines.push(`- ${g.title}`));
+                      }
+                      if (gapsBySeverity.P2.length > 0) {
+                        timelineLines.push("## Week 5-6: Process Formalization");
+                        gapsBySeverity.P2.forEach((g) => timelineLines.push(`- ${g.title}`));
+                      }
+                      if (gapsBySeverity.P3.length > 0) {
+                        timelineLines.push("## Week 7-8: Documentation & Polish");
+                        gapsBySeverity.P3.forEach((g) => timelineLines.push(`- ${g.title}`));
+                      }
+                      if (timelineLines.length > 0) {
+                        sections.push({
+                          title: "Recommended Remediation Timeline",
+                          content: timelineLines.join("\n"),
+                        });
+                      }
+
+                      exportToPdf(`${companyName} - Compliance Profile`, sections);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-sm text-ct-text-secondary transition-colors hover:text-ct-accent"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export Compliance Profile as PDF
+                  </button>
                 </>
               )}
             </div>
