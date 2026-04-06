@@ -1,0 +1,80 @@
+# Pre-launch planning docs (internal only, not tracked in version control)
+.planning/
+
+# =============================================================================
+# CRITICAL: Calibrated ray tracer weights — TRADE SECRET
+# These are production weights calibrated against real audit outcomes.
+# They are the core proprietary asset of the scoring engine.
+# NEVER commit these. NEVER push these. NEVER include in any public storage.
+# See ADR-008 in .planning/03-architecture-decisions.md for full rationale.
+# =============================================================================
+ray_weights.json
+*.weights
+*.weights.json
+*.weights.bak
+calibration_data/
+weight_snapshots/
+
+# Environment and secrets (standard)
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+web/.next/
+web/out/
+
+# Production build
+build/
+dist/
+
+# Database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
