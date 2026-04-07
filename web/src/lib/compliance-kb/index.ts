@@ -22,6 +22,6 @@ export { allDimensions as soc2Dimensions };
 import { ScoreEngine } from "./engine";
 export const soc2Engine = new ScoreEngine(allDimensions);
 
-// Templates — added when Task 24 completes (soc2/templates/index.ts → soc2Templates)
-// import { soc2Templates } from "./soc2/templates";
-// export { soc2Templates };
+// Compliance document templates
+import { soc2Templates } from "./soc2/templates";
+export { soc2Templates };
