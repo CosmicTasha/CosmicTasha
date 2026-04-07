@@ -4,7 +4,10 @@ import type {
   GeneratedDocument,
   GeneratedSection,
 } from './types';
-import { ollamaGenerate } from '@/lib/ollama/client';
+import { InferenceRouter } from '@/lib/inference/router';
+
+// Singleton router — shared across all generation calls within a server instance
+const inferenceRouter = new InferenceRouter();
 
 // ---------------------------------------------------------------------------
 // Answer interpolation — replaces {{key}} and {{key.subkey}} with values
@@ -551,16 +554,15 @@ async function tryAiGenerate(
   companyName: string,
 ): Promise<string | null> {
   try {
-    const result = await ollamaGenerate({
+    const result = await inferenceRouter.generate(
       prompt,
-      system: `You are a SOC 2 compliance writer generating formal policy and procedure documentation for ${companyName}. Produce clear, professional prose suitable for a SOC 2 Type II report. Output only the document section text, no preamble or commentary.`,
-      temperature: 0.4,
-      max_tokens: 800,
-    });
-    return result.response;
+      `You are a SOC 2 compliance writer generating formal policy and procedure documentation for ${companyName}. Produce clear, professional prose suitable for a SOC 2 Type II report. Output only the document section text, no preamble or commentary.`,
+      { temperature: 0.4, maxTokens: 800 },
+    );
+    return result.text;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[doc-gen] Ollama inference failed, falling back to mock: ${message}`);
+    console.warn(`[doc-gen] inference failed, falling back to mock: ${message}`);
     return null;
   }
 }

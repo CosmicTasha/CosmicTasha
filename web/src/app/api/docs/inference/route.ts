@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ollamaGenerate } from '@/lib/ollama/client';
+import { InferenceRouter } from '@/lib/inference/router';
+
+// Singleton router — reused across requests within a server instance
+const inferenceRouter = new InferenceRouter();
 
 // ---------------------------------------------------------------------------
 // POST /api/docs/inference
-// Generates prose for document sections via Ollama.
+// Generates prose for document sections via InferenceRouter (LocalOllama → OllamaCloud → Mock).
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
@@ -23,25 +26,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await ollamaGenerate({
+    const result = await inferenceRouter.generate(
       prompt,
-      system,
-      temperature: temperature ?? 0.4,
-      max_tokens: max_tokens ?? 500,
-    });
-
-    const durationMs = result.total_duration
-      ? Math.round(result.total_duration / 1_000_000) // nanoseconds to ms
-      : 0;
+      system ?? '',
+      {
+        temperature: temperature ?? 0.4,
+        maxTokens: max_tokens ?? 500,
+      },
+    );
 
     return NextResponse.json({
-      text: result.response,
+      text: result.text,
       model: result.model,
-      duration_ms: durationMs,
+      duration_ms: result.duration_ms,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[docs/inference] Ollama inference failed: ${message}`);
+    console.warn(`[docs/inference] inference failed: ${message}`);
     return NextResponse.json(
       { text: null, error: message },
       { status: 503 },
