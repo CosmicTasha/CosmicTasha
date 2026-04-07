@@ -103,7 +103,7 @@ src/app/api/auth/
 | Tier in localStorage | New subscriptions table; getTier() queries DB, never trusts client |
 | Token in URL | Magic link verify changes to POST /api/auth/verify with token in body |
 | No rate limiting | Next.js middleware rate-limits auth endpoints (5/email/hour, 10/IP/min on verify) |
-| No CSRF | SameSite=Strict on Lucia cookies + Origin header validation |
+| No CSRF | SameSite=Lax on Lucia cookies (required for OAuth callbacks) + Origin header validation + CSRF tokens on state-changing POSTs |
 
 ### Session Ownership Model
 
@@ -112,17 +112,33 @@ src/app/api/auth/
 - Stored in localStorage (current behavior)
 - Session row has userId = NULL
 - Protected by session token opacity only (UUID v4)
+- Accessed via a **service-role DB connection** that bypasses RLS (anonymous routes only)
 
-**Post-login claim:**
-- User authenticates via OAuth or magic link
-- System finds unclaimed sessions matching their email (from invite) or claims the session stored in their localStorage
-- `UPDATE intakeSessions SET userId = ? WHERE id = ? AND userId IS NULL`
-- From now on, all access requires authenticated user + ownership match
+**Post-login claim (two paths):**
+
+Path A — claim by localStorage sessionId (single session):
+```
+1. User authenticates (OAuth or magic link)
+2. Frontend sends POST /api/auth/claim-session { sessionId } from localStorage
+3. Backend: UPDATE intakeSessions SET userId = ? WHERE id = ? AND userId IS NULL
+4. If 0 rows affected: session was already claimed → return 409 Conflict
+5. Frontend shows "This session belongs to another account" + option to start fresh
+```
+
+Path B — claim by email invite (potentially multiple sessions):
+```
+1. User authenticates with email matching a pending invite
+2. Backend: SELECT id FROM intake_invites WHERE email = ? AND status = 'pending'
+3. For each invite: UPDATE intakeSessions SET userId = ? WHERE id = invite.sessionId AND userId IS NULL
+4. Mark invites as 'accepted'
+5. If 0 rows affected on any: skip silently (invite was stale or already claimed)
+```
 
 **Authenticated CRUD:**
 - Middleware extracts userId from Lucia session
-- Every DB query filters by userId (application layer)
-- RLS enforces same filter at DB layer (defense in depth)
+- Every DB query filters by userId via Drizzle `.where()` clauses (primary enforcement)
+- RLS enforces same filter at DB layer (defense in depth for direct DB access)
+- Neon serverless note: RLS uses `SET LOCAL` inside explicit transactions to ensure `app.current_user_id` does not leak across pooled connections
 
 ### Email Provider Interface
 
@@ -134,6 +150,38 @@ interface EmailProvider {
 ```
 
 Swap via `EMAIL_PROVIDER=console|resend` env var. Resend needs `RESEND_API_KEY`.
+
+### Lucia Session Table Migration
+
+The existing `sessions` table uses custom fields. Lucia v3 requires specific columns.
+Migration approach: **in-place ALTER** (no active production sessions to preserve):
+
+```sql
+-- Adapt existing sessions table for Lucia v3
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS fresh BOOLEAN DEFAULT true;
+-- Lucia uses text IDs (already the case), expiresAt (already exists), userId (already exists)
+-- No data migration needed — no production sessions exist yet
+```
+
+If column types conflict, drop and recreate (pre-launch, no user data at risk).
+
+### OAuth Accounts Table
+
+Lucia + Arctic require a linked accounts table for multi-provider support:
+
+```sql
+CREATE TABLE oauth_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,              -- 'google' | 'github' | 'microsoft'
+  provider_account_id TEXT NOT NULL,   -- provider's unique user ID
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (provider, provider_account_id)
+);
+CREATE INDEX idx_oauth_accounts_user ON oauth_accounts(user_id);
+```
+
+One user can link multiple providers. Login checks oauth_accounts first, falls back to magic link.
 
 ### New Migration (Phase B)
 
@@ -148,35 +196,67 @@ CREATE TABLE subscriptions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- OAuth accounts
+CREATE TABLE oauth_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  provider_account_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (provider, provider_account_id)
+);
+
 -- RLS on all intake tables
+-- Note: anonymous sessions are accessed via service-role connection (bypasses RLS).
+-- RLS only applies to authenticated operations.
 ALTER TABLE intake_sessions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY user_sessions ON intake_sessions
-  USING (user_id = current_setting('app.current_user_id')::uuid
-         OR user_id IS NULL);
+CREATE POLICY user_sessions_select ON intake_sessions
+  FOR SELECT USING (user_id = current_setting('app.current_user_id', true)::uuid);
+CREATE POLICY user_sessions_update ON intake_sessions
+  FOR UPDATE USING (user_id = current_setting('app.current_user_id', true)::uuid);
+CREATE POLICY user_sessions_insert ON intake_sessions
+  FOR INSERT WITH CHECK (true);  -- anyone can create a session
 
 ALTER TABLE intake_answers ENABLE ROW LEVEL SECURITY;
-CREATE POLICY user_answers ON intake_answers
-  USING (session_id IN (
+CREATE POLICY user_answers_select ON intake_answers
+  FOR SELECT USING (session_id IN (
     SELECT id FROM intake_sessions
-    WHERE user_id = current_setting('app.current_user_id')::uuid
-          OR user_id IS NULL
+    WHERE user_id = current_setting('app.current_user_id', true)::uuid
+  ));
+CREATE POLICY user_answers_modify ON intake_answers
+  FOR ALL USING (session_id IN (
+    SELECT id FROM intake_sessions
+    WHERE user_id = current_setting('app.current_user_id', true)::uuid
   ));
 
 ALTER TABLE company_profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_profiles ON company_profiles
-  USING (session_id IN (
+  FOR ALL USING (session_id IN (
     SELECT id FROM intake_sessions
-    WHERE user_id = current_setting('app.current_user_id')::uuid
-          OR user_id IS NULL
+    WHERE user_id = current_setting('app.current_user_id', true)::uuid
   ));
 
 ALTER TABLE gaps ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_gaps ON gaps
-  USING (session_id IN (
+  FOR ALL USING (session_id IN (
     SELECT id FROM intake_sessions
-    WHERE user_id = current_setting('app.current_user_id')::uuid
-          OR user_id IS NULL
+    WHERE user_id = current_setting('app.current_user_id', true)::uuid
   ));
+```
+
+**RLS implementation note:** Uses `current_setting('app.current_user_id', true)` (the `true` returns NULL instead of error if unset). Anonymous routes use a service-role connection that bypasses RLS entirely. Authenticated routes use `SET LOCAL app.current_user_id = '...'` inside explicit transactions to prevent leakage across Neon's pooled connections. Primary enforcement is Drizzle `.where()` clauses; RLS is defense-in-depth.
+
+### Dimension Migration
+
+The existing `gaps` table has a 5-value enum. Phase C adds 3 new dimensions. Migration:
+
+```sql
+-- Convert dimension column from enum to TEXT (or add new values)
+-- Existing values: access_control, data_protection, operational_readiness, change_management, documentation
+-- New values: system_operations, risk_assessment, vendor_management, hr_training, business_continuity
+-- Mapping: operational_readiness splits into system_operations + business_continuity
+--          documentation is absorbed into each dimension's findings
+ALTER TABLE gaps ALTER COLUMN dimension TYPE TEXT;
 ```
 
 ### Env Vars (Phase B)
@@ -190,6 +270,9 @@ GITHUB_CLIENT_SECRET=
 MICROSOFT_CLIENT_ID=
 MICROSOFT_CLIENT_SECRET=
 MICROSOFT_TENANT_ID=
+
+# Lucia
+LUCIA_SECRET=             # Required — session cookie signing key
 
 # Email (optional — defaults to console)
 EMAIL_PROVIDER=console
@@ -301,10 +384,22 @@ src/lib/inference/
   types.ts              # InferenceProvider interface, InferenceResult
 ```
 
+### biged-rs Endpoint Prerequisites
+
+These biged-rs endpoints already exist (verified in audit):
+- GET /api/health, GET /api/status, GET /api/stream (SSE)
+- POST /api/tasks/dispatch, GET /api/tasks (with filtering)
+- POST /api/compliance/profiles, GET /api/compliance/profiles/{id}/verify
+- GET /api/ollama/status, POST /api/ollama/start, POST /api/ollama/stop
+
+No new biged-rs endpoints need to be built. Phase A is purely client-side wiring.
+
+Note: existing BigEdClient uses `POST /api/tasks` (legacy endpoint). Update to `POST /api/tasks/dispatch` (preferred, supports priority 1-10 and assigned_to).
+
 ### Env Vars (Phase A)
 
 ```env
-BIGED_URL=https://localhost:5555       # HTTPS enforced in prod
+BIGED_URL=http://localhost:5555        # HTTP for local dev; HTTPS required in prod
 OLLAMA_CLOUD_HOST=                     # Empty = disabled
 OLLAMA_CLOUD_KEY=                      # Ollama Cloud API key
 ```
@@ -442,6 +537,8 @@ interface TemplateSection {
 
 Templates 1-5 (critical/high audit risk) get full AI generation sections. Templates 6-14 get structured skeletons with interpolation and simpler AI sections.
 
+**Type system note:** The existing `DocTemplate` uses `type: 'static' | 'ai_generate' | 'conditional'`. The new `ComplianceTemplate` uses `type: 'interpolate' | 'ai_generate'`. This is a **parallel type system**, not a replacement. The existing 14 template files at `src/lib/doc-gen/templates/` with their mockProse generators remain as the fallback layer. `ComplianceTemplate` adds structured compliance metadata (TSC mappings, audit risk, prompt context) on top. The generation pipeline checks for a `ComplianceTemplate` first; if none exists for a given template ID, it falls back to the existing `DocTemplate` + mockProse path.
+
 ### Generation Flow
 
 ```
@@ -500,7 +597,9 @@ CREATE TABLE generated_documents (
 
 ALTER TABLE generated_documents ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_docs ON generated_documents
-  USING (user_id = current_setting('app.current_user_id')::uuid);
+  FOR ALL USING (user_id = current_setting('app.current_user_id', true)::uuid);
+-- Anonymous/demo document generation stays in-memory (existing documentStore Map).
+-- Only authenticated users get persistent doc storage in this table.
 ```
 
 ---
