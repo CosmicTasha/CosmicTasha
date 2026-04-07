@@ -618,7 +618,10 @@ CREATE POLICY user_docs ON generated_documents
 9. RLS migration
 10. Subscriptions table + server-side getTier()
 11. Rate limiting on auth endpoints
-12. CSRF: SameSite=Strict + Origin validation
+12. CSRF: SameSite=Lax + Origin validation + CSRF tokens on POSTs
+13. Hash magic tokens at rest (SHA-256 before DB insert, compare hashed on verify)
+14. Strip token/magicLink from dev-mode API response JSON (log to console only, never in HTTP body)
+15. Logging hygiene: audit all console.log calls in API routes, remove PII (emails, tokens, session IDs) from logs; replace with structured logger (pino) that redacts sensitive fields
 
 ### Phase A — biged-rs Integration (~2 hours)
 1. Wire BigEdClient methods (compliance profiles, task dispatch, Ollama mgmt)
@@ -655,6 +658,55 @@ The demo path (localhost:3000/demo -> NovaBridge seed -> results) MUST stay func
 | OAuth providers | Magic link still works; demo does not require login |
 | Resend email | ConsoleProvider logs to stdout |
 | Score Rift dimensions | ScoreEngine works locally, no external deps |
+
+---
+
+## Security Hardening (Cross-Phase)
+
+Items that apply across all phases, not tied to a single build step:
+
+### .gitignore Expansion
+Verify and add if missing:
+```
+*.pem
+*.key
+*.p12
+*.cert
+*.crt
+.env*
+!.env.example
+*.sqlite
+*.sqlite-journal
+ray_weights/
+calibration_weights/
+```
+
+### SECURITY.md
+Create at repo root before going public:
+- Responsible disclosure process
+- Supported versions
+- Contact email (security@driftwatch.dev or similar)
+- Scope (what is in-scope for reports)
+- Expected response timeline
+
+### CI Security Workflows
+Add before going public:
+
+`.github/workflows/security.yml`:
+- Semgrep SAST scan on PR
+- `npm audit` check (fail on high/critical)
+- Secret scanning (trufflehog or gitleaks)
+
+`.github/dependabot.yml`:
+- Weekly npm dependency updates
+- Weekly GitHub Actions updates
+- Auto-label security PRs
+
+### Logging Hygiene Policy
+- Never log: tokens, magic links, session IDs, passwords, API keys
+- Redact in structured logger: email addresses (log hash only), IP addresses (log prefix only)
+- Use pino with redact config: `redact: ['req.headers.cookie', '*.token', '*.email']`
+- Dev mode: console output only, no file persistence of sensitive data
 
 ---
 
