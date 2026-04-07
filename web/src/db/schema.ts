@@ -99,6 +99,22 @@ export const gaps = pgTable('gaps', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// ── Generated Documents ──────────────────────────────────────────────────────
+export const generatedDocuments = pgTable("generated_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionId: uuid("session_id")
+    .notNull()
+    .references(() => intakeSessions.id),
+  userId: uuid("user_id").references(() => users.id),
+  templateId: text("template_id").notNull(),
+  status: text("status").notNull().default("generating"),
+  sections: jsonb("sections").notNull(),
+  scoreSnapshot: jsonb("score_snapshot"),
+  bigedProfileId: text("biged_profile_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // ── Relations ────────────────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -138,5 +154,16 @@ export const gapsRelations = relations(gaps, ({ one }) => ({
   session: one(intakeSessions, {
     fields: [gaps.sessionId],
     references: [intakeSessions.id],
+  }),
+}));
+
+export const generatedDocumentsRelations = relations(generatedDocuments, ({ one }) => ({
+  session: one(intakeSessions, {
+    fields: [generatedDocuments.sessionId],
+    references: [intakeSessions.id],
+  }),
+  user: one(users, {
+    fields: [generatedDocuments.userId],
+    references: [users.id],
   }),
 }));
