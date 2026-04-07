@@ -1,10 +1,15 @@
+import { log } from '@/lib/logger';
 import type {
+  ComplianceProfile,
   FleetStatus,
   HwState,
   InferenceRequest,
   InferenceResponse,
+  OllamaStatus,
   SkillRequest,
   Task,
+  TaskDispatchRequest,
+  TaskDispatchResponse,
 } from './types';
 
 export class BigEdError extends Error {
@@ -34,6 +39,12 @@ export class BigEdClient {
     const url = baseUrl ?? process.env.BIGED_URL ?? 'http://localhost:5555';
     // Strip trailing slash for consistent URL building
     this.baseUrl = url.replace(/\/+$/, '');
+    if (
+      process.env.NODE_ENV === 'production' &&
+      !this.baseUrl.startsWith('https')
+    ) {
+      log.warn('biged-rs connection is not HTTPS in production');
+    }
   }
 
   // ── HTTP helpers ──────────────────────────────────────────────────
@@ -122,6 +133,53 @@ export class BigEdClient {
       'inference() is deprecated — use ollamaGenerate() from @/lib/ollama/client',
       501,
       '/api/inference',
+    );
+  }
+
+  /** Submit a compliance profile for storage. */
+  async submitProfile(
+    data: Record<string, unknown>,
+  ): Promise<ComplianceProfile> {
+    return this.request<ComplianceProfile>(
+      'POST',
+      '/api/compliance/profiles',
+      data,
+    );
+  }
+
+  /** Verify an existing compliance profile by ID. */
+  async verifyProfile(
+    profileId: string,
+  ): Promise<{ profile_id: string; valid: boolean }> {
+    return this.request<{ profile_id: string; valid: boolean }>(
+      'GET',
+      `/api/compliance/profiles/${profileId}/verify`,
+    );
+  }
+
+  /** Dispatch a task to a specific skill with optional priority and assignment. */
+  async dispatchTask(
+    request: TaskDispatchRequest,
+  ): Promise<TaskDispatchResponse> {
+    return this.request<TaskDispatchResponse>(
+      'POST',
+      '/api/tasks/dispatch',
+      request,
+    );
+  }
+
+  /** Get the current Ollama process status and loaded models. */
+  async ollamaStatus(): Promise<OllamaStatus> {
+    return this.request<OllamaStatus>('GET', '/api/ollama/status');
+  }
+
+  /** Start the Ollama process. Uses a longer timeout as startup may take time. */
+  async ollamaStart(): Promise<{ status: string }> {
+    return this.request<{ status: string }>(
+      'POST',
+      '/api/ollama/start',
+      undefined,
+      30_000,
     );
   }
 

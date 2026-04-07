@@ -77,6 +77,35 @@ export interface HwState {
   ram_total: number;
 }
 
+// Compliance profiles
+export interface ComplianceProfile {
+  profile_id: string;
+  sha256: string;
+  stored_at: string;
+}
+
+// Task dispatch
+export interface TaskDispatchRequest {
+  skill: string;
+  payload?: Record<string, unknown>;
+  priority?: number;
+  assigned_to?: string;
+}
+
+export interface TaskDispatchResponse {
+  status: 'ok';
+  task_id: number;
+  skill: string;
+  priority: number;
+}
+
+// Ollama management
+export interface OllamaStatus {
+  running: boolean;
+  host: string;
+  loaded_models: Array<{ name: string; size: number }>;
+}
+
 // SSE events
 export type FleetEvent =
   | { type: 'task_completed'; task_id: number; skill: string; agent: string }
