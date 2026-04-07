@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/auth/middleware";
+import { verifyOwnership } from "@/lib/auth/session-ownership";
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (req, session) => {
   try {
-    const body = await request.json();
+    const body = await req.json();
 
     const { sessionId, email, name, message, stage } = body as {
       sessionId: string;
@@ -17,6 +19,10 @@ export async function POST(request: Request) {
         { error: "Missing required fields: sessionId, email, stage" },
         { status: 400 }
       );
+    }
+
+    if (!(await verifyOwnership(sessionId, session.userId))) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const inviteId = "stub_" + Date.now();
@@ -40,4 +46,4 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-}
+});

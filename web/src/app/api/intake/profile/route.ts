@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { companyProfiles } from '@/db/schema';
+import { withAuth } from '@/lib/auth/middleware';
+import { verifyOwnership } from '@/lib/auth/session-ownership';
 
 // POST — Upsert company profile (unique on sessionId)
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (req, session) => {
   try {
-    const body = await request.json();
+    const body = await req.json();
     const { sessionId, name, website, size, description, aiDescription, industries, foundedYear } = body;
 
     if (!sessionId) {
@@ -13,6 +15,10 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required field: sessionId' },
         { status: 400 },
       );
+    }
+
+    if (!(await verifyOwnership(sessionId, session.userId))) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const now = new Date();
@@ -49,4 +55,4 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

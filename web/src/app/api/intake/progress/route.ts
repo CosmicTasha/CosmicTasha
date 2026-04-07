@@ -1,12 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { intakeSessions } from '@/db/schema';
+import { withAuth } from '@/lib/auth/middleware';
+import { verifyOwnership } from '@/lib/auth/session-ownership';
 
 // POST — Update session progress (called when completing a stage)
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (req, session) => {
   try {
-    const body = await request.json();
+    const body = await req.json();
     const { sessionId, stage, readinessScore, persona, auditExperience, urgency, urgencyDeadline } = body;
 
     if (!sessionId || stage === undefined) {
@@ -14,6 +16,10 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: sessionId, stage' },
         { status: 400 },
       );
+    }
+
+    if (!(await verifyOwnership(sessionId, session.userId))) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const updates: Record<string, unknown> = {
@@ -42,4 +48,4 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

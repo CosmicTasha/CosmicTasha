@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { intakeSessions } from '@/db/schema';
+import { withAuth } from '@/lib/auth/middleware';
+import { verifyOwnership } from '@/lib/auth/session-ownership';
 
-// POST — Create a new anonymous intake session
+// POST — Create a new anonymous intake session (public — no auth required)
 export async function POST() {
   try {
     const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72h TTL
@@ -24,31 +26,36 @@ export async function POST() {
   }
 }
 
-// GET — Resume a session by ID (?id=xxx)
-export async function GET(request: NextRequest) {
+// GET — Resume a session by ID (?id=xxx) — protected with auth + ownership
+export const GET = withAuth(async (req: Request, session) => {
   try {
-    const id = request.nextUrl.searchParams.get('id');
+    const url = new URL(req.url);
+    const id = url.searchParams.get('id');
     if (!id) {
-      return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
+      return Response.json({ error: 'Missing id parameter' }, { status: 400 });
     }
 
-    const session = await db.query.intakeSessions.findFirst({
+    if (!(await verifyOwnership(id, session.userId))) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const intakeSession = await db.query.intakeSessions.findFirst({
       where: eq(intakeSessions.id, id),
       with: { answers: true, companyProfile: true, gaps: true },
     });
 
-    if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    if (!intakeSession) {
+      return Response.json({ error: 'Session not found' }, { status: 404 });
     }
 
     // Check expiry
-    if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
-      return NextResponse.json({ error: 'Session expired' }, { status: 404 });
+    if (intakeSession.expiresAt && new Date(intakeSession.expiresAt) < new Date()) {
+      return Response.json({ error: 'Session expired' }, { status: 404 });
     }
 
-    return NextResponse.json(session);
+    return Response.json(intakeSession);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return Response.json({ error: message }, { status: 500 });
   }
-}
+});
