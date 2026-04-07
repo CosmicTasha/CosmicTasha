@@ -3,21 +3,28 @@
 import { cookies } from 'next/headers';
 import { db } from '@/db';
 import { users } from '@/db/schema';
-import { sessions, magicTokens } from '@/db/auth-schema';
+import { magicTokens } from '@/db/auth-schema';
 import { eq, and, gt } from 'drizzle-orm';
-import crypto from 'crypto';
+import crypto, { createHash } from 'crypto';
+import { lucia } from '@/lib/auth/lucia';
 
-const SESSION_COOKIE = 'ct_session';
-const SESSION_DURATION_DAYS = 30;
+const SESSION_COOKIE = lucia.sessionCookieName;
+
+// Hash a token using SHA-256 before storing/comparing
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 // Generate a magic link token (random, 15min expiry)
+// Stores the SHA-256 hash in the DB; returns the plaintext token for the link.
 export async function createMagicToken(email: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
+  const hashedToken = hashToken(token);
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
   await db.insert(magicTokens).values({
     email,
-    token,
+    token: hashedToken,
     expiresAt,
   });
 
@@ -28,9 +35,11 @@ export async function createMagicToken(email: string): Promise<string> {
 export async function verifyMagicToken(
   token: string,
 ): Promise<{ userId: string; sessionId: string } | null> {
+  const hashedToken = hashToken(token);
+
   const record = await db.query.magicTokens.findFirst({
     where: and(
-      eq(magicTokens.token, token),
+      eq(magicTokens.token, hashedToken),
       eq(magicTokens.used, false),
       gt(magicTokens.expiresAt, new Date()),
     ),
@@ -57,29 +66,18 @@ export async function verifyMagicToken(
     user = newUser;
   }
 
-  // Create session
-  const sessionId = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(
-    Date.now() + SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000,
+  // Create session via Lucia
+  const session = await lucia.createSession(user.id, {});
+  const sessionCookie = lucia.createSessionCookie(session.id);
+
+  const cookieStore = await cookies();
+  cookieStore.set(
+    sessionCookie.name,
+    sessionCookie.value,
+    sessionCookie.attributes,
   );
 
-  await db.insert(sessions).values({
-    id: sessionId,
-    userId: user.id,
-    expiresAt,
-  });
-
-  // Set cookie
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, sessionId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    expires: expiresAt,
-    path: '/',
-  });
-
-  return { userId: user.id, sessionId };
+  return { userId: user.id, sessionId: session.id };
 }
 
 // Get current session from cookie
@@ -92,16 +90,11 @@ export async function getSession(): Promise<{
 
   if (!sessionId) return null;
 
-  const session = await db.query.sessions.findFirst({
-    where: and(
-      eq(sessions.id, sessionId),
-      gt(sessions.expiresAt, new Date()),
-    ),
-  });
+  const { session, user } = await lucia.validateSession(sessionId);
 
   if (!session) return null;
 
-  return { userId: session.userId, sessionId: session.id };
+  return { userId: user.id, sessionId: session.id };
 }
 
 // Logout — delete session and clear cookie
@@ -110,7 +103,8 @@ export async function deleteSession(): Promise<void> {
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
 
   if (sessionId) {
-    await db.delete(sessions).where(eq(sessions.id, sessionId));
-    cookieStore.delete(SESSION_COOKIE);
+    await lucia.invalidateSession(sessionId);
+    const blankCookie = lucia.createBlankSessionCookie();
+    cookieStore.set(blankCookie.name, blankCookie.value, blankCookie.attributes);
   }
 }

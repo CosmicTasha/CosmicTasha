@@ -4,19 +4,24 @@ import { db } from '@/db';
 import { intakeSessions } from '@/db/schema';
 import { eq, and, ne } from 'drizzle-orm';
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const token = req.nextUrl.searchParams.get('token');
+    const body = await req.json();
+    const token = (body.token ?? '').trim();
 
     if (!token) {
-      return NextResponse.redirect(new URL('/?error=missing_token', req.url));
+      return NextResponse.json(
+        { ok: false, message: 'Missing token' },
+        { status: 400 },
+      );
     }
 
     const result = await verifyMagicToken(token);
 
     if (!result) {
-      return NextResponse.redirect(
-        new URL('/?error=invalid_token', req.url),
+      return NextResponse.json(
+        { ok: false, message: 'Invalid or expired token' },
+        { status: 401 },
       );
     }
 
@@ -28,17 +33,17 @@ export async function GET(req: NextRequest) {
       ),
     });
 
-    if (existing) {
-      return NextResponse.redirect(
-        new URL('/intake?resumed=true', req.url),
-      );
-    }
-
-    return NextResponse.redirect(new URL('/intake', req.url));
+    return NextResponse.json({
+      ok: true,
+      userId: result.userId,
+      sessionId: result.sessionId,
+      resumed: existing != null,
+    });
   } catch (error: unknown) {
     console.error('[auth] verify error:', error);
-    return NextResponse.redirect(
-      new URL('/?error=verification_failed', req.url),
+    return NextResponse.json(
+      { ok: false, message: 'Internal server error' },
+      { status: 500 },
     );
   }
 }
