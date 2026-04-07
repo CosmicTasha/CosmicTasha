@@ -88,15 +88,7 @@ export const gaps = pgTable('gaps', {
   sessionId: uuid('session_id')
     .references(() => intakeSessions.id)
     .notNull(),
-  dimension: text('dimension', {
-    enum: [
-      'access_control',
-      'data_protection',
-      'operational_readiness',
-      'change_management',
-      'documentation',
-    ],
-  }).notNull(),
+  dimension: text('dimension').notNull(),
   severity: text('severity', {
     enum: ['p0', 'p1', 'p2', 'p3'],
   }).notNull(),

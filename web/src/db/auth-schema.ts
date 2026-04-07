@@ -10,6 +10,7 @@ export const sessions = pgTable('sessions', {
     .references(() => users.id)
     .notNull(),
   expiresAt: timestamp('expires_at').notNull(),
+  fresh: boolean('fresh').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -20,6 +21,33 @@ export const magicTokens = pgTable('magic_tokens', {
   expiresAt: timestamp('expires_at').notNull(),
   used: boolean('used').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const oauthAccounts = pgTable("oauth_accounts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  providerAccountId: text("provider_account_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  tier: text("tier").notNull().default("discovery"),
+  startsAt: timestamp("starts_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  endsAt: timestamp("ends_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 // ── Relations ────────────────────────────────────────────────────────────────
