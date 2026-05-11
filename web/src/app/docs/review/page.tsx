@@ -308,7 +308,7 @@ function SectionCard({
 /*  Document complete banner                                           */
 /* ------------------------------------------------------------------ */
 
-function CompleteBanner({ docId }: { docId: string }) {
+function CompleteBanner({ docId: _docId }: { docId: string }) {
   const { currentDoc } = useReview();
 
   const handleExportPdf = useCallback(() => {
