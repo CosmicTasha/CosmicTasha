@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s | CosmicTasha",
   },
   description:
-    "Generate SOC 2 compliance documents in under 30 minutes. AI-powered intake, real-time gap analysis, and 14 audit-ready policies tailored to your company.",
+    "AI-powered SOC 2 compliance documents. 30-minute intake, interaction-aware gap analysis, and 14 audit-ready policies tailored to your company.",
   keywords: [
     "SOC 2",
     "compliance",
@@ -34,14 +34,14 @@ export const metadata: Metadata = {
     type: "website",
     title: "CosmicTasha — AI-Native SOC 2 Compliance",
     description:
-      "Generate SOC 2 compliance documents in under 30 minutes.",
+      "AI-powered SOC 2 compliance. 30-minute intake, interaction-aware scoring, 14 audit-ready policies.",
     siteName: "CosmicTasha",
   },
   twitter: {
     card: "summary_large_image",
     title: "CosmicTasha — AI-Native SOC 2 Compliance",
     description:
-      "Generate SOC 2 compliance documents in under 30 minutes.",
+      "AI-powered SOC 2 compliance. 30-minute intake, interaction-aware scoring, 14 audit-ready policies.",
   },
   robots: {
     index: true,

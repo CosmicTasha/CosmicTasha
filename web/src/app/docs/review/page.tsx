@@ -346,7 +346,7 @@ function CompleteBanner({ docId }: { docId: string }) {
       <div className="mt-4 flex items-center gap-2">
         <button className="flex items-center gap-1.5 rounded-md bg-ct-status-strength px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-ct-status-strength/80">
           <CheckCircle2 className="h-3.5 w-3.5" />
-          Approve &amp; Finalize Document
+          I Approve &amp; Finalize This Document
         </button>
         <button
           onClick={handleExportPdf}
@@ -378,7 +378,7 @@ export default function ReviewPage() {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <p className="text-sm text-ct-text-tertiary">
-          Select a document from the sidebar to begin review.
+          Select a document from the sidebar to begin your review. You approve every section before it&apos;s finalized.
         </p>
       </div>
     );
@@ -422,7 +422,7 @@ export default function ReviewPage() {
             className="mt-3 flex items-center gap-1.5 rounded-md border border-ct-status-strength/20 bg-ct-status-strength/[0.06] px-3 py-1.5 text-xs font-medium text-ct-status-strength transition-colors hover:bg-ct-status-strength/10"
           >
             <Zap className="h-3.5 w-3.5" />
-            Approve All Unflagged Sections
+            I Approve All Unflagged Sections
           </button>
         )}
       </div>

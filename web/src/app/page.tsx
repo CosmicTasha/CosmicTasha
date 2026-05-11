@@ -11,7 +11,7 @@ const steps = [
     number: "2",
     title: "Get Your Profile",
     description:
-      "AI-powered readiness score, gap analysis, and remediation roadmap — instantly.",
+      "Readiness score that models how your compliance dimensions interact — not just a checklist average. Plus gap analysis and remediation roadmap.",
   },
   {
     number: "3",
@@ -23,14 +23,14 @@ const steps = [
 
 const trustCards = [
   {
-    title: "Open Source Scoring",
+    title: "Interaction-Aware Scoring",
     description:
-      "Our readiness algorithm is MIT-licensed via ScoreRift. Inspect the math.",
+      "Checklist tools score each dimension independently. Our engine models how gaps compound — a documentation weakness that masks a control failure shows up here, not in your audit. Algorithm is MIT-licensed via ScoreRift.",
   },
   {
-    title: "Local-First AI",
+    title: "Your Data, Our Models",
     description:
-      "Ollama runs on your hardware. Sensitive data never leaves your network.",
+      "AI inference runs on DriftWatch infrastructure — your data is never sent to third-party AI providers. Delete your data anytime.",
   },
   {
     title: "We Eat Our Own Cooking",
@@ -47,8 +47,9 @@ export default function Home() {
         <h1 className="text-5xl font-bold tracking-tight text-ct-accent">
           CosmicTasha
         </h1>
-        <p className="mt-5 max-w-xl text-xl leading-relaxed text-ct-text-secondary">
-          AI-native SOC&nbsp;2 compliance in under 30&nbsp;minutes
+        <p className="mt-5 max-w-2xl text-xl leading-relaxed text-ct-text-secondary">
+          Compliance tools show you gaps. We show you how your gaps
+          interact&nbsp;&mdash; so you know what will actually fail the audit.
         </p>
         <Link
           href="/intake"
@@ -58,7 +59,7 @@ export default function Home() {
           <span aria-hidden="true">&rarr;</span>
         </Link>
         <p className="mt-4 text-sm text-ct-text-tertiary">
-          No credit card required
+          No credit card, no sales call, no demo gate. Start now.
         </p>
       </section>
 
@@ -153,7 +154,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="mt-0.5 text-ct-accent">&bull;</span>
-                  Human-in-the-loop review workflow
+                  You review &amp; approve every document
                 </li>
               </ul>
             </div>

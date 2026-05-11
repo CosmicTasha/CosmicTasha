@@ -79,7 +79,7 @@ export default function IntakePage() {
         <StageHeader
           title={currentStage === 0 ? "Welcome & Routing" : stageName}
           subtitle={STAGE_SUBTITLES[currentStage] ?? `Complete the ${stageName.toLowerCase()} section to continue.`}
-          tipText={currentStage === 0 ? "We'll ask a few quick questions to tailor the assessment to your role and organization. This takes about 25-30 minutes." : undefined}
+          tipText={currentStage === 0 ? "We'll ask a few quick questions to tailor the assessment to your role and organization. The intake takes about 25-30 minutes. Your readiness score and gap analysis are typically ready within an hour after you finish." : undefined}
         />
 
         <div key={currentStage} className="animate-in fade-in duration-300">

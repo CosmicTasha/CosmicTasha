@@ -28,7 +28,7 @@ const tiers: PricingTier[] = [
     monthlyPrice: "Free",
     annualPrice: null,
     description:
-      "See where you stand. Get a readiness score and P0 gap summary in under 5 minutes.",
+      "See where you stand. Complete a 30-minute intake and get a readiness score, P0 gap summary, and remediation roadmap.",
     features: [
       "Readiness score",
       "P0 gap summary",
@@ -44,11 +44,11 @@ const tiers: PricingTier[] = [
     monthlyPrice: "$149",
     annualPrice: "$1,490/yr",
     description:
-      "Full gap analysis and compliance document generation with human-in-the-loop review.",
+      "Full gap analysis and compliance document generation. You review and approve every section before it's finalized.",
     features: [
       "Full gap analysis",
       "14 compliance documents",
-      "Human-in-the-loop review",
+      "You review & approve every document",
       "PDF & DOCX export",
       "Email support",
     ],
@@ -62,11 +62,11 @@ const tiers: PricingTier[] = [
     monthlyPrice: "$349",
     annualPrice: "$3,490/yr",
     description:
-      "Multi-framework compliance with advanced analytics and priority support.",
+      "Multi-framework compliance with cross-framework interaction scoring and priority support.",
     features: [
       "Everything in Starter",
       "Multi-framework (ISO 27001, HIPAA)",
-      "Advanced gap analytics",
+      "Cross-framework gap interaction analysis",
       "Priority support",
       "Quarterly score tracking",
     ],
@@ -112,7 +112,7 @@ const tiers: PricingTier[] = [
 ];
 
 const allPlansInclude = [
-  "Local-first AI processing",
+  "No third-party AI providers",
   "SOC 2 compliance engine",
   "Encrypted data at rest & transit",
   "No vendor lock-in",
@@ -125,19 +125,31 @@ const faqs = [
   },
   {
     q: "What happens to my data if I downgrade?",
-    a: "Your data is never deleted. If you downgrade, you retain read-only access to documents generated on your previous plan.",
+    a: "You retain read-only access to documents generated on your previous plan. You can export or delete your data at any time — it's yours. The only thing we keep are our own model weights, which never contain your data.",
   },
   {
     q: "Do you offer annual billing?",
     a: "Yes, save 17% with annual billing on any paid plan. Annual subscriptions are billed upfront for the full year.",
   },
   {
+    q: "How is your readiness score different from other tools?",
+    a: "Most compliance platforms score each dimension independently and average the results. Two companies with the same average can have radically different audit outcomes because their gaps interact — a documentation weakness can mask a control failure, and an access control gap can cascade into a data protection exposure. Our scoring engine models these interactions so your score reflects what an auditor will actually find, not a checklist average.",
+  },
+  {
     q: "How does the free Discovery plan work?",
-    a: "Complete the intake questionnaire, get your readiness score and P0 gap summary instantly. No credit card required.",
+    a: "Complete the 30-minute intake questionnaire. Your readiness score and P0 gap summary are typically ready within an hour, though it can take up to two hours during peak demand. No credit card required.",
+  },
+  {
+    q: "Who reviews the generated documents?",
+    a: "You do. DriftWatch generates compliance documents from your intake data, but every section requires your explicit approval before it's finalized. No DriftWatch employee ever sees your answers or reviews your documents. When your auditor asks how the documents were prepared, the answer is: your team reviewed and approved every section through a tracked review gate.",
   },
   {
     q: "Is my data safe?",
-    a: "Your data stays on your infrastructure. Our local-first AI runs via Ollama on your hardware, and all data is encrypted at rest and in transit.",
+    a: "Your intake data and generated documents are processed by AI models running on DriftWatch infrastructure — never forwarded to third-party AI APIs. All data is encrypted at rest and in transit. You can delete your data at any time, and we honor deletion requests within 72 hours.",
+  },
+  {
+    q: "Do I need to talk to sales first?",
+    a: "No. Start your assessment right now — no demo, no sales call, no waiting for access. You'll see your readiness score and gap analysis before you ever talk to us. If you want help interpreting results or choosing a plan, we're here, but the product speaks for itself.",
   },
   {
     q: "Do you offer refunds?",

@@ -387,7 +387,7 @@ export default function ResultsPage() {
   }, []);
 
   const companyName =
-    (answers["q1_1"] as string) || "Your Company";
+    (answers["q1.1"] as string) || "Your Company";
 
   const tierConfig = readinessResult
     ? TIER_CONFIG[readinessResult.tier] ?? TIER_CONFIG["not-ready"]
