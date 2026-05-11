@@ -64,7 +64,12 @@ export default function Stage1({ answers, onAnswer, onContinue }: Stage1Props) {
   const website = (answers["q1.2"] as string) ?? "";
   const headcount = (answers["q1.3"] as string) ?? null;
   const description = (answers["q1.4"] as string) ?? "";
-  const industries = (answers["q1.5"] as string[]) ?? [];
+  // useMemo so the `[]` fallback doesn't create a fresh reference each render,
+  // which would invalidate the `fetchPreview` useCallback below.
+  const industries = React.useMemo<string[]>(
+    () => (answers["q1.5"] as string[]) ?? [],
+    [answers],
+  );
   const founded = (answers["q1.6"] as string) ?? "";
 
   // -- AI preview fetch logic --

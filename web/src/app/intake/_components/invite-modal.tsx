@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Lock, Send, CheckCircle2, Users } from "lucide-react";
+import { Lock, Send, CheckCircle2 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */

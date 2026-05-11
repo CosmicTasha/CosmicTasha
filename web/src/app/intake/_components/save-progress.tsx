@@ -39,7 +39,7 @@ export function SaveProgress({ className }: { className?: string }) {
       if (data.magicLink) {
         setDevLink(data.magicLink);
       }
-    } catch (err: unknown) {
+    } catch {
       setStatus("error");
       setErrorMsg("Network error — please try again");
     }

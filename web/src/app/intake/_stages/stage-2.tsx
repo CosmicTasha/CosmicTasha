@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   Cloud,
-  Server,
   Globe,
   Sailboat,
   Triangle,

@@ -96,10 +96,6 @@ export default function Stage0({ answers, onAnswer, onContinue }: Stage0Props) {
 
   const allAnswered = Boolean(role && experience && timeline);
 
-  const selectedTimelineOption = TIMELINE_OPTIONS.find(
-    (o) => o.id === timeline
-  );
-
   return (
     <div className="flex flex-col gap-10">
       {/* Q0.1 — Role */}

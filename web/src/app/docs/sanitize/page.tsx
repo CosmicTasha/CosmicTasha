@@ -94,7 +94,6 @@ export default function SanitizePage() {
       setState(createInitialState(inputText, data.results));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
-      // eslint-disable-next-line no-alert
       alert(`Scan error: ${msg}`);
     } finally {
       setScanning(false);
