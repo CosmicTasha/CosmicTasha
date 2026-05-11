@@ -1,13 +1,7 @@
-# Pre-launch planning docs (internal only, not tracked in version control)
+# Internal planning docs
 .planning/
 
-# =============================================================================
-# CRITICAL: Calibrated ray tracer weights — TRADE SECRET
-# These are production weights calibrated against real audit outcomes.
-# They are the core proprietary asset of the scoring engine.
-# NEVER commit these. NEVER push these. NEVER include in any public storage.
-# See ADR-008 in .planning/03-architecture-decisions.md for full rationale.
-# =============================================================================
+# Calibrated scoring weights and calibration artifacts (kept out of source control)
 ray_weights.json
 *.weights
 *.weights.json

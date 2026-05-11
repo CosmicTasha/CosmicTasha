@@ -4,7 +4,7 @@
  * Calculates a 0-100 compliance readiness score across 5 dimensions
  * based on intake answers. Updates in real-time as the user progresses.
  *
- * Dimensions and weights from Draft.txt Section 4.1:
+ * Dimensions and weights:
  *   Access Control Maturity   25%
  *   Data Protection            20%
  *   Operational Readiness      20%

@@ -10,7 +10,7 @@ Ray model:      claims emit rays → rays bounce through dimensions → path geo
                 reveals interaction effects → Monte Carlo sampling → 0-100 with
                 confidence intervals and structural insight
 
-The five dimensions from Draft.txt:
+The five readiness dimensions:
   1. Access Control Maturity (25%)
   2. Data Protection (20%)
   3. Operational Readiness (20%)
@@ -301,7 +301,7 @@ DEFAULT_CAUSAL_GRAPH: dict[Dimension, list[tuple[Dimension, float]]] = {
     ],
 }
 
-# Default source distribution (matches original Draft.txt dimension weights)
+# Default source distribution (matches the published dimension weights)
 DEFAULT_SOURCE_WEIGHTS: dict[Dimension, float] = {
     Dimension.ACCESS_CONTROL: 0.25,
     Dimension.DATA_PROTECTION: 0.20,
@@ -423,7 +423,7 @@ class RayTracer:
         Fire n_rays through the dimension space and collect results.
 
         Rays are distributed across source dimensions proportionally to the
-        original dimension weights from Draft.txt.
+        published dimension weights.
         """
         if seed is not None:
             random.seed(seed)
@@ -683,7 +683,7 @@ class ReadinessScore:
 
     @property
     def readiness_band(self) -> str:
-        """Map to existing Draft.txt readiness bands."""
+        """Map a numeric score to a readiness band."""
         if self.score >= 80:
             return "Audit-Ready"
         elif self.score >= 60:

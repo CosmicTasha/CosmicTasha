@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Lint and build (web)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          BIGED_URL: https://localhost:5555
+          AUTH_SECRET: ci-build-secret-not-for-runtime-use
+          BASE_URL: http://localhost:3000
+          OLLAMA_URL: http://localhost:11434
+          OLLAMA_MODEL: qwen3:8b
+        run: npm run build
