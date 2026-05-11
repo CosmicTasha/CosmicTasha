@@ -49,10 +49,11 @@ export default function PrivacyPage() {
             3. Data Storage &amp; Security
           </h2>
           <p className="mt-2">
-            CosmicTasha uses a local-first AI architecture wherever possible,
-            meaning your data is processed on your infrastructure. All data is
+            AI inference runs entirely on DriftWatch infrastructure — your
+            data is never forwarded to third-party AI providers. All data is
             encrypted at rest and in transit. Paid customers receive isolated,
-            per-tenant database schemas for additional security.
+            per-tenant database schemas for additional security. You may
+            request deletion of your data at any time.
           </p>
         </div>
 

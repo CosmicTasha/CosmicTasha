@@ -89,14 +89,14 @@ interface SaasCategory {
 }
 
 const SAAS_CATEGORIES: SaasCategory[] = [
-  { key: "q2_3_identity", label: "Identity & Access", options: ["Okta", "Google Workspace", "Microsoft Entra ID", "JumpCloud", "OneLogin", "Auth0", "None"], gapWarning: true },
+  { key: "q2_3_identity", label: "Identity & Access", options: ["Okta", "Google Workspace", "Microsoft Entra ID", "JumpCloud", "OneLogin", "Auth0", "Other", "None"], gapWarning: true },
   { key: "q2_3_source_code", label: "Source Code", options: ["GitHub", "GitLab", "Bitbucket", "Azure DevOps", "Other"] },
-  { key: "q2_3_cicd", label: "CI/CD", options: ["GitHub Actions", "GitLab CI", "CircleCI", "Jenkins", "ArgoCD", "None"] },
-  { key: "q2_3_monitoring", label: "Monitoring", options: ["Datadog", "New Relic", "Splunk", "PagerDuty", "CloudWatch", "Sentry", "None"], gapWarning: true },
+  { key: "q2_3_cicd", label: "CI/CD", options: ["GitHub Actions", "GitLab CI", "CircleCI", "Jenkins", "ArgoCD", "Other", "None"] },
+  { key: "q2_3_monitoring", label: "Monitoring", options: ["Datadog", "New Relic", "Splunk", "PagerDuty", "CloudWatch", "Sentry", "Other", "None"], gapWarning: true },
   { key: "q2_3_project", label: "Project Management", options: ["Jira", "Linear", "Asana", "Shortcut", "GitHub Issues", "Other"] },
   { key: "q2_3_communication", label: "Communication", options: ["Slack", "Microsoft Teams", "Discord", "Other"] },
-  { key: "q2_3_hr", label: "HR", options: ["BambooHR", "Rippling", "Gusto", "Deel", "None"] },
-  { key: "q2_3_endpoint", label: "Endpoint Management", options: ["Jamf", "Kandji", "Microsoft Intune", "Kolide", "None"], gapWarning: true },
+  { key: "q2_3_hr", label: "HR", options: ["BambooHR", "Rippling", "Gusto", "Deel", "Other", "None"] },
+  { key: "q2_3_endpoint", label: "Endpoint Management", options: ["Jamf", "Kandji", "Microsoft Intune", "Kolide", "Other", "None"], gapWarning: true },
 ];
 
 // ---------------------------------------------------------------------------

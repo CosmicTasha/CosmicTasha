@@ -1,6 +1,13 @@
 # Internal planning docs
 .planning/
 
+# Internal session-handoff notes
+SESSION_HANDOFF.md
+**/SESSION_HANDOFF.md
+
+# Serena MCP working directory
+.serena/
+
 # Calibrated scoring weights and calibration artifacts (kept out of source control)
 ray_weights.json
 *.weights
