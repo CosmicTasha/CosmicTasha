@@ -1,6 +1,7 @@
 import type { InferenceProvider, InferenceResult, InferenceOpts } from "./types";
 import { MockProvider } from "./providers/mock";
 import { LocalOllamaProvider } from "./providers/local-ollama";
+import { OllamaCloudProvider } from "./providers/ollama-cloud";
 import { log } from "@/lib/logger";
 
 export class InferenceRouter {
@@ -25,7 +26,6 @@ export class InferenceRouter {
     // OllamaCloudProvider only if configured
     if (process.env.OLLAMA_CLOUD_HOST) {
       try {
-        const { OllamaCloudProvider } = require("./providers/ollama-cloud");
         providers.push(new OllamaCloudProvider());
       } catch {
         // OLLAMA_CLOUD_HOST set but provider failed to construct

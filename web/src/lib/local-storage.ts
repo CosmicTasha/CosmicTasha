@@ -16,7 +16,7 @@ export function saveToLocalStorage(state: StoredState): void {
       ...state,
       lastActivityAt: new Date().toISOString(),
     }));
-  } catch (e: unknown) { /* quota exceeded, ignore */ }
+  } catch { /* quota exceeded, ignore */ }
 }
 
 export function loadFromLocalStorage(): StoredState | null {
@@ -24,7 +24,7 @@ export function loadFromLocalStorage(): StoredState | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
-  } catch (e: unknown) { return null; }
+  } catch { return null; }
 }
 
 export function clearLocalStorage(): void {

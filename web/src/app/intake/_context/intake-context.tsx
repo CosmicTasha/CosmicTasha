@@ -122,7 +122,7 @@ async function ensureSession(
     setState((prev) => ({ ...prev, sessionId: id }));
     stateRef.current = { ...stateRef.current, sessionId: id };
     return id;
-  } catch (error: unknown) {
+  } catch {
     // API unavailable — generate a local session ID
     const id = generateLocalSessionId();
     setState((prev) => ({ ...prev, sessionId: id }));
@@ -339,7 +339,9 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, readinessScore: score }));
   }, []);
 
-  // Recalculate readiness score and detect gaps whenever answers change
+  // Recalculate readiness score and detect gaps whenever answers change.
+  // TODO: derive readinessResult/gaps in render via useMemo and drop them
+  // from state — that's the React 19 idiom for derived state.
   useEffect(() => {
     const result = calculateReadiness(state.answers);
     const detected = detectGaps(state.answers);
@@ -351,6 +353,7 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
       description: g.description,
       id: g.id,
     }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((prev) => ({
       ...prev,
       readinessScore: result.overall,

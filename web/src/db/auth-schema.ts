@@ -4,6 +4,9 @@ import { relations } from 'drizzle-orm';
 import { pgTable, uuid, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 import { users } from './schema';
 
+// Re-export users so auth code can import all auth-related tables from one module
+export { users };
+
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(), // random token
   userId: uuid('user_id')

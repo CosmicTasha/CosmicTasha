@@ -18,6 +18,8 @@ export function DevTierSwitcher() {
   const [tier, setTier] = useState<Tier>('discovery');
 
   useEffect(() => {
+    // Initial localStorage read on mount — SSR-safe deferred load
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTier(getCurrentTier());
   }, []);
 

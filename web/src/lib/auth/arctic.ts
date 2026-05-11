@@ -2,8 +2,14 @@ import { Google, GitHub, MicrosoftEntraId } from "arctic";
 
 export type OAuthProvider = "google" | "github" | "microsoft";
 
-export function getProviders(): Partial<Record<OAuthProvider, Google | GitHub | MicrosoftEntraId>> {
-  const providers: Partial<Record<OAuthProvider, Google | GitHub | MicrosoftEntraId>> = {};
+export interface Providers {
+  google?: Google;
+  github?: GitHub;
+  microsoft?: MicrosoftEntraId;
+}
+
+export function getProviders(): Providers {
+  const providers: Providers = {};
 
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     providers.google = new Google(
