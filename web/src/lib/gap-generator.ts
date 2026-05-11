@@ -6,7 +6,7 @@
  * signals to actionable gap items with severity and remediation hints.
  */
 
-import type { ReadinessResult, DimensionScore } from "./readiness";
+import type { ReadinessResult } from "./readiness";
 
 export interface GeneratedGap {
   id: string;

@@ -38,24 +38,11 @@ function str(answers: Answers, key: string): string {
   return typeof v === "string" ? v : "";
 }
 
-function arr(answers: Answers, key: string): string[] {
-  const v = answers[key];
-  return Array.isArray(v) ? v : [];
-}
-
 function obj(answers: Answers, key: string): Record<string, string> {
   const v = answers[key];
   return v && typeof v === "object" && !Array.isArray(v)
     ? (v as Record<string, string>)
     : {};
-}
-
-function hasAnswer(answers: Answers, key: string): boolean {
-  const v = answers[key];
-  if (v === undefined || v === null || v === "") return false;
-  if (Array.isArray(v)) return v.length > 0;
-  if (typeof v === "object") return Object.keys(v).length > 0;
-  return true;
 }
 
 /** Score a single checklist answer (best=100, worst=0) */

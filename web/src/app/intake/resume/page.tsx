@@ -64,6 +64,8 @@ export default function ResumePage() {
       router.replace("/intake");
       return;
     }
+    // Initial localStorage read on mount — must be deferred to avoid SSR mismatch
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaved(data);
     setLoading(false);
   }, [router]);
@@ -160,7 +162,7 @@ export default function ResumePage() {
               // Clear saved state so intake starts fresh
               try {
                 localStorage.removeItem("cosmictasha_intake");
-              } catch (e: unknown) {
+              } catch {
                 /* ignore */
               }
             }}

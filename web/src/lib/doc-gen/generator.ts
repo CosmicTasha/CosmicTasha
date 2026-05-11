@@ -472,10 +472,10 @@ The team of ${engineerCount} engineers has defined clear criteria for what quali
 
 function generateEmergencyChangesProse(
   answers: Record<string, unknown>,
-  companyName: string,
+  _companyName: string,
 ): string {
   const approval = resolveValue(answers, 'q4_7_approval');
-  const plan = resolveValue(answers, 'q4_4_plan');
+  const _plan = resolveValue(answers, 'q4_4_plan');
   const engineerCount = resolveValue(answers, 'q3.2');
   const cicd = resolveValue(answers, 'q2_3_cicd');
 

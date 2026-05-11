@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { lucia } from "./lucia";
-import { log } from "@/lib/logger";
 
 interface AuthSession {
   userId: string;

@@ -216,7 +216,7 @@ export default function DocsPage() {
                 Generate Compliance Documents
               </h1>
               <p className="mt-1.5 text-sm text-ct-text-secondary">
-                Based on your assessment, we'll generate{' '}
+                Based on your assessment, we&apos;ll generate{' '}
                 <span className="font-medium text-ct-text-primary">
                   {templates.length} documents
                 </span>{' '}
